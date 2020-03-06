@@ -1,3 +1,7 @@
+# context_capture.py
+# Copyright (c) 2020 Applied Research Associates, Inc.
+# SPDX-License-Identifier: https://spdx.org/licenses/MIT.html
+
 """Classes and methods for interacting with Context Capture products.
 """
 import re

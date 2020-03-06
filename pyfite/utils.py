@@ -1,3 +1,7 @@
+# utils.py
+# Copyright (c) 2020 Applied Research Associates, Inc.
+# SPDX-License-Identifier: https://spdx.org/licenses/MIT.html
+
 """Utility constants and methods for general use.
 
 Attributes:

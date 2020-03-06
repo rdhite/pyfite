@@ -1,3 +1,7 @@
+# coordinates.py
+# Copyright (c) 2020 Applied Research Associates, Inc.
+# SPDX-License-Identifier: https://spdx.org/licenses/MIT.html
+
 """Provides classes for working with varying coordinate reference systems.
 
 Supported types of coordinate reference systems are East-North-Up/Local Tangent Plane,

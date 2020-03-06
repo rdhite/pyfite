@@ -1,3 +1,7 @@
+# obj.py
+# Copyright (c) 2020 Applied Research Associates, Inc.
+# SPDX-License-Identifier: https://spdx.org/licenses/MIT.html
+
 """Contains classes for reading, manipulating, and writing .obj files.
 """
 import os

@@ -1,3 +1,7 @@
+# __init__.py
+# Copyright (c) 2020 Applied Research Associates, Inc.
+# SPDX-License-Identifier: https://spdx.org/licenses/MIT.html
+
 """Package containing capabilities frequently needed for FITE.
 
 This package includes classes for reading/writing .objs,

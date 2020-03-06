@@ -1,3 +1,7 @@
+# setup.py
+# Copyright (c) 2020 Applied Research Associates, Inc.
+# SPDX-License-Identifier: https://spdx.org/licenses/MIT.html
+
 """Builds a .whl for the pyfite package.
 """
 import os
@@ -14,7 +18,7 @@ with open('requirements.txt', 'r') as fh:
 
 setuptools.setup(
     name="pyfite",
-    version="0.0.2",
+    version="1.0.0",
     author="Ryan Hite",
     author_email="rhite@ara.com",
     description="Basic module containing FITE helper classes.",
