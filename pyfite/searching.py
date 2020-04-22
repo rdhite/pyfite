@@ -14,7 +14,7 @@ import os
 import re
 import zipfile
 from abc import ABC, abstractmethod
-from typing import Generator, Iterable, List, Pattern, Tuple
+from typing import Generator, Iterable, List, Pattern
 
 def _findAllByExtensions(self, extensions: Iterable[str], caseSensitive=False) -> List[str]:
     """Finds all files with one of the given ``extensions``.

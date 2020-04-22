@@ -13,7 +13,7 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
-from pyfite.coordinates import CoordinateConverter, CoordinateReferenceSystem, Geocentric
+from pyfite.coordinates import CoordinateConverter, CoordinateReferenceSystem
 from pyfite.utils import Extents
 
 

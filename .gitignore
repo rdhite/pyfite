@@ -1,5 +1,8 @@
 __pycache__
 build
 dist
+docs
+venv
+.vscode
 *.swp
 *egg-info
