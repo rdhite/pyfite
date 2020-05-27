@@ -115,11 +115,11 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
             elif attribute == 'f':
                 for i, token in enumerate(tokens[1:]):
-                    v = [Obj.INV_IDX] * 3
+                    vf = [Obj.INV_IDX] * 3
                     for j, val in enumerate(token.split('/')):
                         if val:
-                            v[j] = int(val)
-                    self.faces[f][i] = v
+                            vf[j] = int(val)
+                    self.faces[f][i] = vf
                 f += 1
 
     def _customLineProcessing(self, line: str) -> None:
