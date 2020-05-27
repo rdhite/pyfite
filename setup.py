@@ -18,7 +18,7 @@ with open('requirements.txt', 'r') as fh:
 
 setuptools.setup(
     name="pyfite",
-    version="1.0.0",
+    version="1.0.1",
     author="Ryan Hite",
     author_email="rhite@ara.com",
     description="Basic module containing FITE helper classes.",
