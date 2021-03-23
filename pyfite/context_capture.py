@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Tuple, Union
 
-from pyfite.coordinates import CoordinateReferenceSystem, Geodetic, LocalTangentPlane
+from pyfite.coordinates import CoordinateReferenceSystem, Geodetic, LocalTangentPlane, ProjCrs
 from pyfite.utils import DECIMAL_REGEX
 
 class Metadata:
@@ -23,7 +23,7 @@ class Metadata:
         path (Union[str, Path]): The path to the metadata.xml to parse
     """
     __enuRegex = f'<SRS>ENU:({DECIMAL_REGEX}),({DECIMAL_REGEX})</SRS>'
-    __geodeticRegex = '<SRS>EPSG:4326</SRS>'
+    __epsgRegex = '<SRS>EPSG:(\\d{4,5})</SRS>'
     __offsetRegex = f'<SRSOrigin>({DECIMAL_REGEX}),({DECIMAL_REGEX}),({DECIMAL_REGEX})</SRSOrigin>'
 
     def __init__(self, path: Union[str, Path]):
@@ -45,10 +45,10 @@ class Metadata:
                 self._crs = LocalTangentPlane(lon, lat, 0.0, offset)
                 return
 
-            # Next check to see if this is a geodetic metadata.xml
-            m = re.search(Metadata.__geodeticRegex, metadata)
+            # Next check to see if this is an EPSG metadata.xml
+            m = re.search(Metadata.__epsgRegex, metadata)
             if m:
-                self._crs = Geodetic(offset)
+                self._crs = ProjCrs.fromEPSG(m[1], offset)
 
     def getOffset(self) -> Tuple[float, float, float]:
         """Gets the offset specified by the metadata.xml.

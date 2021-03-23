@@ -402,8 +402,9 @@ class ProjCrs(CoordinateReferenceSystem):
     Args:
         projStr (str): A valid Proj string
     """
-    def __init__(self, projStr: str):
+    def __init__(self, projStr: str, offset: Optional[Tuple[float, float, float]] = (0.0, 0.0, 0.0)):
         self._proj = projStr
+        self._offset = offset
 
     def __str__(self):
         """See ``CoordinateReferenceSystem.__str__``.
@@ -425,6 +426,18 @@ class ProjCrs(CoordinateReferenceSystem):
         """See ``CoordinateReferenceSystem.fromStr``
         """
         return ProjCrs(srep)
+
+    @staticmethod
+    def fromEPSG(code: Union[str,int], offset: Tuple[float, float, float]) -> 'ProjCrs':
+        """Creates ProjCrs from an EPSG code.
+
+        Args:
+            code: The EPSG code to use
+        
+        Returns:
+            A ProjCrs object representing the `code`
+        """
+        return ProjCrs(CRS.from_epsg(code).to_proj4(), offset)
 
     def getProjStr(self) -> str:
         """See ``CoordinateReferenceSystem.getProjStr``
