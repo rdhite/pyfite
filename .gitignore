@@ -6,3 +6,4 @@ venv
 .vscode
 *.swp
 *egg-info
+.idea
