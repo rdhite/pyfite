@@ -7,6 +7,7 @@
 from cmath import isclose
 
 import numpy as np
+from pyfite.coordinates import computeDegreeSize, CoordinateConverter, Geocentric, Geodetic, LocalTangentPlane, Utm, ProjCrs
 
 import pyfite.coordinates as pfc
 
@@ -85,3 +86,15 @@ def test_XYZ_in_LocalTangentPlane_to_and_from_Geodetic(): # pylint: disable=inva
     assert isclose(eastern_point[1], 0, abs_tol=__METER_TOLERANCE)
     assert isclose(northern_point[0], 0, abs_tol=__METER_TOLERANCE)
     assert isclose(northern_point[1], one_degree_distances[1] / 100, abs_tol=__METER_TOLERANCE)
+    
+def test_ProjCRS_FromEPSG():
+    epsg4326_crs = ProjCrs.fromEPSG(4326, (60.25, -80.12, 0))
+
+    assert (str(epsg4326_crs) == '+proj=longlat +datum=WGS84 +no_defs +type=crs 60.25 -80.12 0')
+
+    converter = CoordinateConverter(epsg4326_crs, Geodetic())
+    latlon_array = converter.convert(np.ndarray((1,3), buffer=np.array([0.0, 0.0, 0.0])))
+
+    assert (latlon_array[0][0] == 60.25)
+    assert (latlon_array[0][1] == -80.12)
+    assert (latlon_array[0][2] == 0)
