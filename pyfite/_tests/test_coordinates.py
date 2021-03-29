@@ -89,12 +89,10 @@ def test_XYZ_in_LocalTangentPlane_to_and_from_Geodetic(): # pylint: disable=inva
     
 def test_ProjCRS_FromEPSG():
     epsg4326_crs = ProjCrs.fromEPSG(4326, (60.25, -80.12, 0))
+    epsg4978_crs = ProjCrs.fromEPSG(4978, (34.09, -118.13, 0))
+    epsg32618_crs = ProjCrs.fromEPSG(32618, (28.54, -81.38, 0))
 
     assert (str(epsg4326_crs) == '+proj=longlat +datum=WGS84 +no_defs +type=crs 60.25 -80.12 0')
-
-    converter = CoordinateConverter(epsg4326_crs, Geodetic())
-    latlon_array = converter.convert(np.ndarray((1,3), buffer=np.array([0.0, 0.0, 0.0])))
-
-    assert (latlon_array[0][0] == 60.25)
-    assert (latlon_array[0][1] == -80.12)
-    assert (latlon_array[0][2] == 0)
+    assert (str(epsg4978_crs) == '+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs 34.09 -118.13 0')
+    assert (str(epsg32618_crs) == '+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs +type=crs 28.54 -81.38 0')
+    
