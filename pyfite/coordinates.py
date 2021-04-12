@@ -399,10 +399,13 @@ class Utm(CoordinateReferenceSystem):
 class ProjCrs(CoordinateReferenceSystem):
     """Any arbitrary coordinate system supported by Proj.
 
+    NOTE: Offsets can be provided but are interpreted and applied completely outside
+    of any proj-based context.
+
     Args:
         projStr (str): A valid Proj string
     """
-    def __init__(self, projStr: str):
+    def __init__(self, projStr: str, offset=(0.0, 0.0, 0.0)):
         self._proj = projStr
 
     def __str__(self):
@@ -467,6 +470,9 @@ class CoordinateConverter:
         if len(shape) != 2 or shape[1] != 3:
             raise RuntimeError(f'Cannot convert non-3D points: shape was {shape}')
 
+        # Conversions are almost always done using pyproj, which can't handle arbitrary offsets
+        # on the three axes very well. Instead, do the offset math outside of the conversion
+        # so that pyproj can operate in its normal way
         return self.__convert(points + self.__fromOffset) - self.__toOffset
 
     def convert(self, points: np.ndarray) -> np.ndarray:
@@ -491,8 +497,8 @@ class CoordinateConverter:
         Returns:
             Callable[[np.ndarray],np.ndarray]: Method that converts a set of points
         """
-        # note that offsets are handled in __call__ so they aren't here
 
+        # note that offsets are handled in __call__ so they aren't here
         func = None
         if (not isinstance(fromCrs, LocalTangentPlane)) and (not isinstance(toCrs, LocalTangentPlane)):
             func = CoordinateConverter.__getPyprojFunc(fromCrs.getProjStr(), toCrs.getProjStr())
