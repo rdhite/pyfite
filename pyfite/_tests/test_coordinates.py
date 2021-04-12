@@ -7,7 +7,6 @@
 from cmath import isclose
 
 import numpy as np
-from pyfite.coordinates import computeDegreeSize, CoordinateConverter, Geocentric, Geodetic, LocalTangentPlane, Utm, ProjCrs
 
 import pyfite.coordinates as pfc
 
@@ -86,13 +85,15 @@ def test_XYZ_in_LocalTangentPlane_to_and_from_Geodetic(): # pylint: disable=inva
     assert isclose(eastern_point[1], 0, abs_tol=__METER_TOLERANCE)
     assert isclose(northern_point[0], 0, abs_tol=__METER_TOLERANCE)
     assert isclose(northern_point[1], one_degree_distances[1] / 100, abs_tol=__METER_TOLERANCE)
-    
-def test_ProjCRS_FromEPSG():
-    epsg4326_crs = ProjCrs.fromEPSG(4326, (60.25, -80.12, 0))
-    epsg4978_crs = ProjCrs.fromEPSG(4978, (34.09, -118.13, 0))
-    epsg32618_crs = ProjCrs.fromEPSG(32618, (28.54, -81.38, 0))
 
-    assert (str(epsg4326_crs) == '+proj=longlat +datum=WGS84 +no_defs +type=crs 60.25 -80.12 0')
-    assert (str(epsg4978_crs) == '+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs 34.09 -118.13 0')
-    assert (str(epsg32618_crs) == '+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs +type=crs 28.54 -81.38 0')
+def test_projcrs_from_epsg():
+    """Tests that a proj string is properly built from EPSG codes.
+    """
+    epsg4326_crs = pfc.ProjCrs.from_epsg(4326, (60.25, -80.12, 0))
+    epsg4978_crs = pfc.ProjCrs.from_epsg(4978, (34.09, -118.13, 0))
+    epsg32618_crs = pfc.ProjCrs.from_epsg(32618, (28.54, -81.38, 0))
+
+    assert str(epsg4326_crs) == '+proj=longlat +datum=WGS84 +no_defs +type=crs 60.25 -80.12 0'
+    assert str(epsg4978_crs) == '+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs 34.09 -118.13 0'
+    assert str(epsg32618_crs) == '+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs +type=crs 28.54 -81.38 0'
     
