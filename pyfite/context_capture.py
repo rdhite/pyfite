@@ -48,7 +48,7 @@ class Metadata:
             # Next check to see if this is an EPSG metadata.xml
             m = re.search(Metadata.__epsgRegex, metadata)
             if m:
-                self._crs = ProjCrs.fromEPSG(m[1], offset)
+                self._crs = ProjCrs.from_epsg(m[1], offset)
 
     def get_offset(self) -> Tuple[float, float, float]:
         """Gets the offset specified by the metadata.xml.
