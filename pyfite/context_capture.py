@@ -50,7 +50,7 @@ class Metadata:
             if m:
                 self._crs = ProjCrs.fromEPSG(m[1], offset)
 
-    def getOffset(self) -> Tuple[float, float, float]:
+    def get_offset(self) -> Tuple[float, float, float]:
         """Gets the offset specified by the metadata.xml.
 
         Returns:
@@ -58,7 +58,7 @@ class Metadata:
         """
         return self._crs.offset
 
-    def setOffset(self, offset: Tuple[float, float, float]) -> None:
+    def set_offset(self, offset: Tuple[float, float, float]) -> None:
         """Sets the offset.
 
         Args:
@@ -66,7 +66,7 @@ class Metadata:
         """
         self._crs.offset = offset
 
-    def getCrs(self) -> CoordinateReferenceSystem:
+    def get_crs(self) -> CoordinateReferenceSystem:
         """Gets the CoordinateReferenceSystem represented by a Metadata.
 
         Returns:
@@ -74,7 +74,7 @@ class Metadata:
         """
         return self._crs
 
-    def setCrs(self, crs: CoordinateReferenceSystem) -> None:
+    def set_crs(self, crs: CoordinateReferenceSystem) -> None:
         """Sets the CoordinateReferenceSystem.
 
         Args:
@@ -94,4 +94,4 @@ class Metadata:
         Args:
             path (Union[str,Path]): The path to write to
         """
-        raise RuntimeError('Metadata.write not implemented')
+        raise NotImplementedError() # pylint: disable=no-self-use
