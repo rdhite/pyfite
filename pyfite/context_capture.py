@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Tuple, Union
 
-from pyfite.coordinates import CoordinateReferenceSystem, Geodetic, LocalTangentPlane, ProjCrs
+from pyfite.coordinates import CoordinateReferenceSystem, LocalTangentPlane, ProjCrs
 from pyfite.utils import DECIMAL_REGEX
 
 class Metadata:
