@@ -16,28 +16,28 @@ import zipfile
 from abc import ABC, abstractmethod
 from typing import Generator, Iterable, List, Pattern
 
-def _findAllByExtensions(self, extensions: Iterable[str], caseSensitive=False) -> List[str]:
+def _find_all_by_extensions(self, extensions: Iterable[str], case_sensitive=False) -> List[str]:
     """Finds all files with one of the given ``extensions``.
 
     All extensions will be prefixed with a . before searching if one is not already present.
 
     Args:
         extensions (Iterable[str]): The list of extensions to search for
-        caseSensitive (bool): Whether extensions should be treated as case sensitive
+        case_sensitive (bool): Whether extensions should be treated as case sensitive
 
     Returns:
         List[str]: List of paths found with one of the given ``extensions``
     """
     extensions = [ext[1:] if ext.startswith('.') else ext for ext in extensions if len(ext) > 0]
-    patternStr = f'.*\\.(?:{"|".join(extensions)})$'
-    pattern = re.compile(patternStr) if caseSensitive else re.compile(patternStr, re.IGNORECASE)
-    return self.findAll(pattern)
+    pattern_str = f'.*\\.(?:{"|".join(extensions)})$'
+    pattern = re.compile(pattern_str) if case_sensitive else re.compile(pattern_str, re.IGNORECASE)
+    return self.find_all(pattern)
 
 class Searcher(ABC):
     """Interface for Searchers
     """
     @abstractmethod
-    def _findAll(self, pattern: Pattern[str]) -> Generator[str, None, None]:
+    def _find_all(self, pattern: Pattern[str]) -> Generator[str, None, None]:
         """Finds all files in the archive that match ``pattern``.
 
         Note:
@@ -54,7 +54,7 @@ class Searcher(ABC):
         """
         raise NotImplementedError()
 
-    def findAll(self, pattern: Pattern[str]) -> List[str]:
+    def find_all(self, pattern: Pattern[str]) -> List[str]:
         """Finds all files in the archive that match ``pattern``.
 
         Note:
@@ -69,9 +69,9 @@ class Searcher(ABC):
         Returns:
             List[str]: The list of all files that matched ``pattern``
         """
-        return list(self._findAll(pattern))
+        return list(self._find_all(pattern))
 
-    def findFirst(self, pattern: Pattern[str]) -> str:
+    def find_first(self, pattern: Pattern[str]) -> str:
         """Finds the first file in the archive that matches ``pattern``.
 
         Note:
@@ -87,24 +87,24 @@ class Searcher(ABC):
             None: If no files matched Pattern[str]
             str: The first file that matched ``pattern``
         """
-        return next(self._findAll(pattern), None)
+        return next(self._find_all(pattern), None)
 
-    def findAllByExtensions(self, extensions: Iterable[str], caseSensitive=False) -> List[str]:
+    def find_all_by_extensions(self, extensions: Iterable[str], case_sensitive=False) -> List[str]:
         """Finds all files with one of the given ``extensions``
 
         All extensions will be prefixed with a . before searching if one is not already present.
 
         Args:
             extensions (Iterable[str]): The list of extensions to search for
-            caseSensitive (bool): Whether extensions should be treated as case sensitive
+            case_sensitive (bool): Whether extensions should be treated as case sensitive
 
         Returns:
             List[str]: List of paths found with one of the given ``extensions``
         """
         extensions = [ext[1:] if ext.startswith('.') else ext for ext in extensions if len(ext) > 0]
-        patternStr = f'.*\\.(?:{"|".join(extensions)})$'
-        pattern = re.compile(patternStr) if caseSensitive else re.compile(patternStr, re.IGNORECASE)
-        return self.findAll(pattern)
+        pattern_str = f'.*\\.(?:{"|".join(extensions)})$'
+        pattern = re.compile(pattern_str) if case_sensitive else re.compile(pattern_str, re.IGNORECASE)
+        return self.find_all(pattern)
 
 class ArchiveSearcher(Searcher):
     """Searches through archive contents without extracting any data.
@@ -129,12 +129,13 @@ class ArchiveSearcher(Searcher):
     def __del__(self):
         self._archive.close()
 
-    def _findAll(self, pattern: Pattern[str]) -> Generator[str, None, None]:
-        """See ``Searcher._findAll``
+    def _find_all(self, pattern: Pattern[str]) -> Generator[str, None, None]:
+        """See ``Searcher._find_all``
         """
-        return (entry.filename for entry in self._archive.infolist() if re.search(pattern, entry.filename) and entry.file_size > 0)
+        return (entry.filename for entry in self._archive.infolist()
+                if re.search(pattern, entry.filename) and entry.file_size > 0)
 
-    def extractFiles(self, dest: str, files: List[str]) -> None:
+    def extract_files(self, dest: str, files: List[str]) -> None:
         """Extracts the ``files`` in the archive to ``dest``
 
         The paths in ``files`` are expected to be relative to the archive root and
@@ -174,8 +175,8 @@ class DirectorySearcher(Searcher):
         if not os.path.isdir(self._root):
             raise NotADirectoryError()
 
-    def _findAll(self, pattern: Pattern[str]) -> Generator[str, None, None]:
-        """See ``Searcher._findAll``
+    def _find_all(self, pattern: Pattern[str]) -> Generator[str, None, None]:
+        """See ``Searcher._find_all``
         """
         def gen():
             for root, _, files in os.walk(self._root):
