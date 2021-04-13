@@ -413,10 +413,18 @@ class Utm(CoordinateReferenceSystem):
     @staticmethod
     def from_point(lon: float, lat: float, _=None) -> 'Utm':
         """Construct a ``Utm`` from a given ``lon`` and ``lat``.
+
+        NOTE: Proj does not take into account the special case for 31V/32V
+        in the EU, so this method does not either.
         """
         # Note that a third argument is provided as optional for cases in which
         # a 3d point is expanded with *
-        # TODO(rhite): handle special EU case?
+
+        if not -90 <= lat <= 90:
+            raise ValueError('Latitude must be within the range -90 to 90')
+
+        lon = lon % 360 # Bring into 0-360
+        lon = lon - 360 if lon > 180 else lon # Bring into -180 - 180
         return Utm(math.floor((lon + 180) / 360 * 60) + 1, lat < 0)
 
     def get_proj_str(self) -> str:
@@ -430,6 +438,10 @@ class Utm(CoordinateReferenceSystem):
 
 class ProjCrs(CoordinateReferenceSystem):
     """Any arbitrary coordinate system supported by Proj.
+
+    NOTE: Offsets can be provided but are interpreted and applied completely outside
+    of any proj-based context.
+
 
     Args:
         proj_str (str): A valid Proj string
@@ -514,6 +526,9 @@ class CoordinateConverter:
         if len(shape) != 2 or shape[1] != 3:
             raise RuntimeError(f'Cannot convert non-3D points: shape was {shape}')
 
+        # Conversions are almost always done using pyproj, which can't handle arbitrary offsets
+        # on the three axes very well. Instead, do the offset math outside of the conversion
+        # so that pyproj can operate in its normal way
         return self.__convert(points + self.__from_offset) - self.__to_offset
 
     def convert(self, points: np.ndarray) -> np.ndarray:
@@ -540,7 +555,6 @@ class CoordinateConverter:
             Callable[[np.ndarray],np.ndarray]: Method that converts a set of points
         """
         # note that offsets are handled in __call__ so they aren't here
-
         func = None
         if (not isinstance(from_crs, LocalTangentPlane)) and (not isinstance(to_crs, LocalTangentPlane)):
             func = CoordinateConverter.__get_pyproj_func(from_crs.get_proj_str(), to_crs.get_proj_str())
