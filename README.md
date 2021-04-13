@@ -38,15 +38,15 @@ Some searching options look like:
 ```python
 import pyfite as fite
 investigator = fite.searching.DirectorySearcher('/some_dir')
-investigator.findAll('^baz')
+investigator.find_all('^baz')
 # ['/some_dir/bazfile.txt', '/some_dir/baz/moon.jpeg', '/some_dir/baz/star.png', '/some_dir/baz/stun.jpeg']
-investigator.findAll('^baz/') # or investigator.findAll(r'^baz\\') on windows
+investigator.find_all('^baz/') # or investigator.find_all(r'^baz\\') on windows
 # ['/some_dir/baz/moon.jpeg', '/some_dir/baz/star.png', '/some_dir/baz/stun.jpeg']
-investigator.findAllByExtensions(['jpg', 'jpeg', 'png'])
+investigator.find_all_by_extensions(['jpg', 'jpeg', 'png'])
 # ['/some_dir/baz/moon.jpeg', '/some_dir/baz/star.png', '/some_dir/baz/stun.jpeg', '/some_dir/foo/foosub/im_hiding.jpg]
-investigator.findFirst('\.txt$')
+investigator.find_first('\.txt$')
 # '/some_dir/bazfile.txt
-investigator.findAll('bar')
+investigator.find_all('bar')
 # []
 ```
 
