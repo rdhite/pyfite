@@ -16,42 +16,22 @@ from cmath import isclose
 import unittest
 
 import numpy as np
-from pyfite.coordinates import computeDegreeSize, CoordinateConverter, CoordinateReferenceSystem, Geocentric, Geodetic, LocalTangentPlane, ProjCrs, Utm
+
+import pyfite.coordinates as pfc
 
 __METER_TOLERANCE = 0.01
 __DEGREE_TOLERANCE = 0.000001
 
 
-__TEST_GDC_POINTS = np.array([
-    [-80.77468299836328, 25.523483359092026, 0],
-    [-119.94182053217915, 37.35285450844277, 0],
-    [-156.91405290143325, 70.42810484231154, 0],
-    [24.385561107035954, 69.91032043790399, 0],
-    [24.046366314657458, 55.367942013406385, 0],
-    [1.9987048100563902, 48.03116705007951, 0],
-    [35.918183610676714, 31.626220236696938, 0],
-    [113.42419325705953, 23.984269338377466, 0],
-    [84.08384371632113, 60.98776445128271, 0],
-    [80.86149328421209, 20.690582572441752, 0],
-    [-155.4960208145335, 19.54667090833186, 0],
-    [117.15533606870929, -29.216448708824693, 0],
-    [150.22682832561097, -24.37426106830226, 0],
-    [170.23932107594118, -44.45808013822229, 0],
-    [20.824015033221407, -32.84849496667563, 0],
-    [46.602819253985786, -19.81877685339102, 0],
-    [-70.58898151277855, -50.41432195971855, 0],
-    [-43.79259291487872, -13.15560679766183, 0]
-])
-
-
-def forward_reverse(crs1: CoordinateReferenceSystem, crs2: CoordinateReferenceSystem, pts1: np.ndarray, pts2: np.ndarray, tol1: float, tol2: float):
+def forward_reverse(crs1: pfc.CoordinateReferenceSystem, crs2: pfc.CoordinateReferenceSystem,  # pylint: disable=too-many-arguments
+                    pts1: np.ndarray, pts2: np.ndarray, tol1: float, tol2: float):
     """Tests forward and reverse conversions of points provided two coordinate systems.
 
     Ensure converting `pts1` via a forward conversion (from `crs1` to `crs2`) yields `pts2` within a tolerance of `tol1`
     Ensure converting `pts2` via a reverse conversion (from `crs2` to `crs1`) yields `pts1` within a tolerance of `tol2`
     """
-    forward = CoordinateConverter(crs1, crs2)
-    reverse = CoordinateConverter(crs2, crs1)
+    forward = pfc.CoordinateConverter(crs1, crs2)
+    reverse = pfc.CoordinateConverter(crs2, crs1)
 
     forward_expected = pts2
     forward_actual = forward(pts1)
@@ -75,41 +55,51 @@ def assert_proj_str_equivalent(proj1: str, proj2: str):
 
 
 # PROJ string generation tests
-def test_gdc_getProjStr():
+def test_gdc_get_proj_str():
+    """Test that `Geodetic.get_proj_str` returns a correct proj string.
+    """
     # no offset
-    crs = Geodetic()
+    crs = pfc.Geodetic()
     assert_proj_str_equivalent(
-        crs.getProjStr(), '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+        crs.get_proj_str(), '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 
     # offset is arbitrary as it does not matter here
-    crs = Geodetic(
+    crs = pfc.Geodetic(
         offset=(np.random.rand(), np.random.rand(), np.random.rand()))
     assert_proj_str_equivalent(
-        crs.getProjStr(), '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+        crs.get_proj_str(), '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 
 
-def test_gcc_getProjStr():
+def test_gcc_get_proj_str():
+    """Test that `Geocentric.get_proj_str` returns a correct proj string.
+    """
     # no offset
-    crs = Geocentric()
-    assert_proj_str_equivalent(crs.getProjStr(), '+proj=geocent +ellps=WGS84')
+    crs = pfc.Geocentric()
+    assert_proj_str_equivalent(
+        crs.get_proj_str(), '+proj=geocent +ellps=WGS84')
 
     # offset is arbitrary as it does not matter here
-    crs = Geocentric(
+    crs = pfc.Geocentric(
         offset=(np.random.rand(), np.random.rand(), np.random.rand()))
-    assert_proj_str_equivalent(crs.getProjStr(), '+proj=geocent +ellps=WGS84')
+    assert_proj_str_equivalent(
+        crs.get_proj_str(), '+proj=geocent +ellps=WGS84')
 
 
-def test_utm_getProjStr():
+def test_utm_get_proj_str():
+    """Test that `Utm.get_proj_str` returns a correct proj string.
+    """
     for zone, south in [(3, False), (12, False), (8, True), (17, True), (43, False), (51, True)]:
-        crs_no_off = Utm(zone, south)
-        crs_off = Utm(zone, south, offset=(np.random.rand(),
-                      np.random.rand(), np.random.rand()))
+        crs_no_off = pfc.Utm(zone, south)
+        crs_off = pfc.Utm(zone, south, offset=(np.random.rand(),
+                                               np.random.rand(), np.random.rand()))
         utm_str = f'+proj=utm +zone={zone} +ellps=WGS84{" +south" if south else ""}'
-        assert_proj_str_equivalent(crs_no_off.getProjStr(), utm_str)
-        assert_proj_str_equivalent(crs_off.getProjStr(), utm_str)
+        assert_proj_str_equivalent(crs_no_off.get_proj_str(), utm_str)
+        assert_proj_str_equivalent(crs_off.get_proj_str(), utm_str)
 
 
-def test_proj_getProjStr():
+def test_proj_get_proj_str():
+    """Test that `ProjCrs.get_proj_str` returns a correct proj string.
+    """
     projs = [
         '+proj=merc +lat_ts=56.5 +ellps=GRS80',
         '+proj=utm +zone=11 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0',
@@ -117,69 +107,225 @@ def test_proj_getProjStr():
     ]
 
     for proj in projs:
-        assert_proj_str_equivalent(ProjCrs(proj).getProjStr(), proj)
+        assert_proj_str_equivalent(pfc.ProjCrs(proj).get_proj_str(), proj)
         assert_proj_str_equivalent(
-            ProjCrs(proj, offset=(np.random.rand(), np.random.rand(),
-                    np.random.rand())).getProjStr(),
+            pfc.ProjCrs(proj, offset=(np.random.rand(), np.random.rand(),
+                                      np.random.rand())).get_proj_str(),
             proj)
+
+
+def test_offset_application():
+    """Test that offsets are applied properly during conversions.
+    """
+    # If all below test_crs1_crs2 tests pass, we can use them to
+    # generate test cases for offset applications
+
+    # Making a round-trip with intermittent checks
+    gdc_pts = np.array([[-73.9864461, 40.7567137, 15.000]])
+    gcc_pts = pfc.CoordinateConverter(
+        pfc.Geodetic(), pfc.Geocentric())(gdc_pts)
+    utm_pts = pfc.CoordinateConverter(
+        pfc.Geodetic(), pfc.Utm(zone=18, south=False))(gdc_pts)
+
+    # Offsets for each coordinate system
+    # Using np.array with shape (1, 3) so subsequent math utilizing offsets is seamless
+    gdc_offset = np.array([[-70, 40, 10]])
+    gcc_offset = np.array([[1_000_000, -4_000_000, 4_000_000]])
+    utm_offset = np.array([[500_000, 4_000_000, 15.000]])
+
+    # Coordinate systems with offsets in place
+    off_gdc = pfc.Geodetic(offset=tuple(gdc_offset[0]))
+    off_gcc = pfc.Geocentric(offset=tuple(gcc_offset[0]))
+    off_utm = pfc.Utm(zone=18, south=False, offset=tuple(utm_offset[0]))
+
+    # Starting spot
+    off_gdc_pts_expected = gdc_pts - gdc_offset
+
+    # Checks offset application Geodetic -> Geocentric
+    off_gcc_pts_actual = pfc.CoordinateConverter(off_gdc, off_gcc)(off_gdc_pts_expected)
+    off_gcc_pts_expected = gcc_pts - gcc_offset
+    np.testing.assert_array_almost_equal(
+        off_gcc_pts_actual, off_gcc_pts_expected, __METER_TOLERANCE)
+    
+    # Checks offset application Geocentric -> Utm
+    off_utm_pts_actual = pfc.CoordinateConverter(off_gcc, off_utm)(off_gcc_pts_expected)
+    off_utm_pts_expected = utm_pts - utm_offset
+    np.testing.assert_array_almost_equal(off_utm_pts_actual, off_utm_pts_expected, __METER_TOLERANCE)
+
+    # Checks offset application Utm -> Geodetic
+    off_gdc_pts_actual = pfc.CoordinateConverter(off_utm, off_gdc)(off_utm_pts_expected)
+    np.testing.assert_array_almost_equal(off_gdc_pts_expected[:,:2], off_gdc_pts_actual[:,:2], __DEGREE_TOLERANCE)
+    np.testing.assert_array_almost_equal(off_gdc_pts_expected[:,2], off_gdc_pts_actual[:,2], __METER_TOLERANCE)
 
 
 # Conversion Tests
 def test_ltp_gdc():
-    # TODO: Include offset cases
-    ...
+    """Test conversion between LTP and Geodetic.
+
+    NOTE: Does not currently test extreme cases where curvatur of
+    Earth's surface would have a significant impact. That is generally
+    a case for UTM instead of LTP.
+    """
+    # Times Square
+    ltp = pfc.LocalTangentPlane(-73.9864461, 40.7567137)
+    gdc = pfc.Geodetic()
+    ltp_expected = np.array([
+        [196.339820, -302.517581, 15.000],
+        [-276.712192,  44.3360115, 30.000],
+        [85.2336246,  342.076563, 700.000]
+    ])
+    gdc_expected = np.array([
+        [-73.9841211, 40.7539895, 15.000],
+        [-73.9897230, 40.7571129, 30.000],
+        [-73.9854367, 40.7597941, 700.000]
+    ])
+
+    # Since Geodetic is degrees for x/y, but meters for z, we can't use a single
+    # tolerance value sent to `forward_reverse`
+    gdc_actual = pfc.CoordinateConverter(ltp, gdc)(ltp_expected)
+    np.testing.assert_array_almost_equal(
+        gdc_actual[:, :2], gdc_expected[:, :2], __DEGREE_TOLERANCE)  # degree parts
+    np.testing.assert_array_almost_equal(
+        gdc_actual[:, 2], gdc_expected[:, 2], __METER_TOLERANCE)  # meter part
+
+    ltp_actual = pfc.CoordinateConverter(gdc, ltp)(gdc_expected)
+    np.testing.assert_array_almost_equal(
+        ltp_actual, ltp_expected, __METER_TOLERANCE)
 
 
 def test_ltp_gcc():
-    # TODO: Include offset cases
-    ...
+    """Test conversion between LTP and Geocentric.
+    """
+    # Times Square
+    ltp = pfc.LocalTangentPlane(-73.9864461, 40.7567137)
+    gcc = pfc.Geocentric()
+    ltp_expected = np.array([
+        [196.339, -302.517, 15.000],
+        [-276.712,  44.336, 30.000],
+        [85.233,  342.076, 700.000]
+    ])
+    gcc_expected = np.array([
+        [1334955.179, -4650677.131,  4141776.030],
+        [1334441.149, -4650600.898,  4142048.564],
+        [1334875.436, -4650802.007,  4142711.533]
+    ])
+
+    forward_reverse(ltp, gcc, ltp_expected, gcc_expected,
+                    __METER_TOLERANCE, __METER_TOLERANCE)
 
 
 def test_ltp_utm():
-    # TODO: Include offset cases
-    ...
+    """Test conversion between LTP and UTM.
+    """
+    ltp = pfc.LocalTangentPlane(-73.9864461, 40.7567137)
+    utm = pfc.Utm(zone=18, south=False)
+    ltp_expected = np.array([
+        [196.339, -302.517, 15.000],
+        [-276.712,  44.336, 30.000],
+        [85.233,  342.076, 700.000]
+    ])
+    utm_expected = np.array([
+        [585754.522, 4511944.464, 15.000],
+        [585277.643, 4512285.726, 30.000],
+        [585636.015, 4512587.533, 700.000]
+    ])
+    forward_reverse(ltp, utm, ltp_expected, utm_expected,
+                    __METER_TOLERANCE, __METER_TOLERANCE)
 
 
 def test_gdc_gcc():
-    # TODO: Include offset cases
-    from_crs, to_crs = Geodetic(), Geocentric()
-    from_pts = np.array([
-        [-80.77468299836328, 25.523483359092026, 0],
-        [-119.94182053217915, 37.35285450844277, 0],
-        [-156.91405290143325, 70.42810484231154, 0],
-        [46.602819253985786, -19.81877685339102, 0],
-        [-70.58898151277855, -50.41432195971855, 0],
-        [-43.79259291487872, -13.15560679766183, 0]])
-    to_pts = np.array([
-        [923310.41036713, -5684773.70330688,  2731518.39366618],
-        [-2533699.56208946, -4398805.61771698,  3848595.06334085],
-        [-1971370.75595563,  -840289.45997952,  5987207.54174497],
-        [4124143.71477629,  4361589.57680129, -2148833.87802462],
-        [1353449.32148221, -3840969.86384632, -4892284.83188213],
-        [4484002.83470524, -4298891.48864389, -1442173.67029885]])
-    forward_reverse(from_crs, to_crs, from_pts, to_pts, __METER_TOLERANCE, __DEGREE_TOLERANCE)
+    """Test conversion between Geodetic and Geocentric.
+    """
+    gdc = pfc.Geodetic()
+    gcc = pfc.Geocentric()
+    gdc_expected = np.array([
+        [-80.7746829, 25.5234833, 0.000],
+        [-119.9418205, 37.3528545, 0.000],
+        [-156.9140529, 70.4281048, 0.000],
+        [46.6028192, -19.8187768, 0.000],
+        [-70.5889815, -50.4143219, 0.000],
+        [-43.7925929, -13.1556067, 0.000]])
+    gcc_expected = np.array([
+        [923310.410, -5684773.703,  2731518.393],
+        [-2533699.562, -4398805.617,  3848595.063],
+        [-1971370.755,  -840289.459,  5987207.541],
+        [4124143.714,  4361589.576, -2148833.878],
+        [1353449.321, -3840969.863, -4892284.831],
+        [4484002.834, -4298891.488, -1442173.670]])
+
+    # Since Geodetic is degrees for x/y, but meters for z, we can't use a single
+    # tolerance value sent to `forward_reverse`
+    gdc_actual = pfc.CoordinateConverter(gcc, gdc)(gcc_expected)
+    np.testing.assert_array_almost_equal(
+        gdc_actual[:, :2], gdc_expected[:, :2], __DEGREE_TOLERANCE)  # degree parts
+    np.testing.assert_array_almost_equal(
+        gdc_actual[:, 2], gdc_expected[:, 2], __METER_TOLERANCE)  # meter part
+
+    gcc_actual = pfc.CoordinateConverter(gdc, gcc)(gdc_expected)
+    np.testing.assert_array_almost_equal(
+        gcc_actual, gcc_actual, __METER_TOLERANCE)
 
 
 def test_gdc_utm():
-    # TODO: Include offset cases
-    ...
+    """Test conversion between Geodetic and UTM.
+    """
+    gdc = pfc.Geodetic()
+    utm = pfc.Utm(zone=18, south=False)
+    gdc_expected = np.array([
+        [-73.9841211, 40.7539895, 15.000],
+        [-73.9897230, 40.7571129, 30.000],
+        [-73.9854367, 40.7597941, 700.000]
+    ])
+    utm_expected = np.array([
+        [585754.522, 4511944.464, 15.000],
+        [585277.643, 4512285.726, 30.000],
+        [585636.015, 4512587.533, 700.000]
+    ])
+
+    # Since Geodetic is degrees for x/y, but meters for z, we can't use a single
+    # tolerance value sent to `forward_reverse`
+    gdc_actual = pfc.CoordinateConverter(utm, gdc)(utm_expected)
+    np.testing.assert_array_almost_equal(
+        gdc_actual[:, :2], gdc_expected[:, :2], __DEGREE_TOLERANCE)  # degree parts
+    np.testing.assert_array_almost_equal(
+        gdc_actual[:, 2], gdc_expected[:, 2], __METER_TOLERANCE)  # meter part
+
+    utm_actual = pfc.CoordinateConverter(gdc, utm)(gdc_expected)
+    np.testing.assert_array_almost_equal(
+        utm_actual, utm_actual, __METER_TOLERANCE)
 
 
 def test_gcc_utm():
-    # TODO: Include offset cases
-    ...
+    """Test conversion between Geocentric and UTM.
+    """
+    gcc = pfc.Geocentric()
+    utm = pfc.Utm(zone=18, south=False)
+    gcc_expected = np.array([
+        [1334955.179, -4650677.131,  4141776.030],
+        [1334441.149, -4650600.898,  4142048.564],
+        [1334875.436, -4650802.007,  4142711.533]
+    ])
+    utm_expected = np.array([
+        [585754.522, 4511944.464, 15.000],
+        [585277.643, 4512285.726, 30.000],
+        [585636.015, 4512587.533, 700.000]
+    ])
+
+    forward_reverse(gcc, utm, gcc_expected, utm_expected,
+                    __METER_TOLERANCE, __METER_TOLERANCE)
 
 
-def test_XYZ_in_LocalTangentPlane_to_and_from_Geodetic():
+def test_xyz_in_ltp_to_and_from_gdc():
     """Tests that conversions from LTP to GDC properly handle coordinate order.
 
     Underlying libraries converting between LTP and GDC expect/provide points in
     (East, North, Up) and (Latitude, Longitude, Altitude), so converters must account
     for the different interpretations.
     """
-    one_degree_distances = computeDegreeSize(lat=0)
+    one_degree_distances = pfc.compute_degree_size(lat=0)
 
-    convert = CoordinateConverter(LocalTangentPlane(lon=0, lat=0), Geodetic())
+    convert = pfc.CoordinateConverter(
+        pfc.LocalTangentPlane(lon=0, lat=0), pfc.Geodetic())
     eastern_point = convert(
         np.array([[one_degree_distances[0] / 100, 0, 0]]))[0]
     northern_point = convert(
@@ -190,7 +336,8 @@ def test_XYZ_in_LocalTangentPlane_to_and_from_Geodetic():
     assert isclose(northern_point[0], 0, abs_tol=__DEGREE_TOLERANCE)
     assert isclose(northern_point[1], 0.01, abs_tol=__DEGREE_TOLERANCE)
 
-    convert = CoordinateConverter(Geodetic(), LocalTangentPlane(lon=0, lat=0))
+    convert = pfc.CoordinateConverter(
+        pfc.Geodetic(), pfc.LocalTangentPlane(lon=0, lat=0))
     eastern_point = convert(np.array([[0.01, 0, 0]]))[0]
     northern_point = convert(np.array([[0, 0.01, 0]]))[0]
 
@@ -202,20 +349,20 @@ def test_XYZ_in_LocalTangentPlane_to_and_from_Geodetic():
         northern_point[1], one_degree_distances[1] / 100, abs_tol=__METER_TOLERANCE)
 
 
-def test_computeDegreeSize():
-    """Tests that computeDegreeSize is accurate.
+def test_compute_degree_size():
+    """Tests that compute_degree_size is accurate.
 
     Since there are various methods to calculate the length of a degree
     and constants used in those methods may vary slightly, the
     results are allowed a slightly higher tolerance than __METER_TOLERANCE.
     """
     TOLERANCE = 1
-    zero = computeDegreeSize(lat=0)
-    fifteen = computeDegreeSize(lat=15)
-    thirty = computeDegreeSize(lat=30)
-    forty_five = computeDegreeSize(lat=45)
-    sixty = computeDegreeSize(lat=60)
-    seventy_five = computeDegreeSize(lat=75)
+    zero = pfc.compute_degree_size(lat=0)
+    fifteen = pfc.compute_degree_size(lat=15)
+    thirty = pfc.compute_degree_size(lat=30)
+    forty_five = pfc.compute_degree_size(lat=45)
+    sixty = pfc.compute_degree_size(lat=60)
+    seventy_five = pfc.compute_degree_size(lat=75)
 
     # Raw values taken from https://www.movable-type.co.uk/scripts/latlong-vincenty.html
     assert isclose(zero[0], 111319.491, abs_tol=TOLERANCE)
@@ -230,3 +377,33 @@ def test_computeDegreeSize():
     assert isclose(sixty[1], 111412.273, abs_tol=TOLERANCE)
     assert isclose(seventy_five[0], 28901.664, abs_tol=TOLERANCE)
     assert isclose(seventy_five[1], 111618.359, abs_tol=TOLERANCE)
+
+
+def test_dms_to_decimal():
+    """Tests that dms_to_decimal performs the correct calculation.
+    """
+    cases = [
+        ((48, 24, 36), 48.41),
+        ((48, 24.6), 48.41),
+        ((-48, 24, 36), -48.41),
+        ((-48, 24.6), -48.41),
+        ((30, 36, 4.5), 30.60125),
+        ((30, 36.075), 30.60125),
+        ((-30, 36, 4.5), -30.60125),
+        ((-30, 36.075), -30.60125),
+    ]
+
+    for case in cases:
+        assert pfc.dms_to_decimal(*case[0]) == case[1]
+
+
+def test_utm_from_point():
+    """Tests that `Utm.from_point` accuractely calculates UTM zone/hemisphere.
+    """
+    pts = ((-117, 32), (-117, -14), (-73, 38), (-23, -36), (41, 53), (52, -36))
+    zones = ((11, False), (11, True), (18, False), (27, True), (37, False), (39, True))
+    for pt, zone in zip(pts, zones):
+        utm = pfc.Utm.from_point(*pt)
+        assert(utm.zone == zone[0])
+        assert(utm.south == zone[1])
+
