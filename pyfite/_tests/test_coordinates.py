@@ -142,20 +142,26 @@ def test_offset_application():
     off_gdc_pts_expected = gdc_pts - gdc_offset
 
     # Checks offset application Geodetic -> Geocentric
-    off_gcc_pts_actual = pfc.CoordinateConverter(off_gdc, off_gcc)(off_gdc_pts_expected)
+    off_gcc_pts_actual = pfc.CoordinateConverter(
+        off_gdc, off_gcc)(off_gdc_pts_expected)
     off_gcc_pts_expected = gcc_pts - gcc_offset
     np.testing.assert_array_almost_equal(
         off_gcc_pts_actual, off_gcc_pts_expected, __METER_TOLERANCE)
-    
+
     # Checks offset application Geocentric -> Utm
-    off_utm_pts_actual = pfc.CoordinateConverter(off_gcc, off_utm)(off_gcc_pts_expected)
+    off_utm_pts_actual = pfc.CoordinateConverter(
+        off_gcc, off_utm)(off_gcc_pts_expected)
     off_utm_pts_expected = utm_pts - utm_offset
-    np.testing.assert_array_almost_equal(off_utm_pts_actual, off_utm_pts_expected, __METER_TOLERANCE)
+    np.testing.assert_array_almost_equal(
+        off_utm_pts_actual, off_utm_pts_expected, __METER_TOLERANCE)
 
     # Checks offset application Utm -> Geodetic
-    off_gdc_pts_actual = pfc.CoordinateConverter(off_utm, off_gdc)(off_utm_pts_expected)
-    np.testing.assert_array_almost_equal(off_gdc_pts_expected[:,:2], off_gdc_pts_actual[:,:2], __DEGREE_TOLERANCE)
-    np.testing.assert_array_almost_equal(off_gdc_pts_expected[:,2], off_gdc_pts_actual[:,2], __METER_TOLERANCE)
+    off_gdc_pts_actual = pfc.CoordinateConverter(
+        off_utm, off_gdc)(off_utm_pts_expected)
+    np.testing.assert_array_almost_equal(
+        off_gdc_pts_expected[:, :2], off_gdc_pts_actual[:, :2], __DEGREE_TOLERANCE)
+    np.testing.assert_array_almost_equal(
+        off_gdc_pts_expected[:, 2], off_gdc_pts_actual[:, 2], __METER_TOLERANCE)
 
 
 # Conversion Tests
@@ -401,9 +407,9 @@ def test_utm_from_point():
     """Tests that `Utm.from_point` accuractely calculates UTM zone/hemisphere.
     """
     pts = ((-117, 32), (-117, -14), (-73, 38), (-23, -36), (41, 53), (52, -36))
-    zones = ((11, False), (11, True), (18, False), (27, True), (37, False), (39, True))
+    zones = ((11, False), (11, True), (18, False),
+             (27, True), (37, False), (39, True))
     for pt, zone in zip(pts, zones):
         utm = pfc.Utm.from_point(*pt)
-        assert(utm.zone == zone[0])
-        assert(utm.south == zone[1])
-
+        assert utm.zone == zone[0]
+        assert utm.south == zone[1]
