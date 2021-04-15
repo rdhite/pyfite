@@ -439,6 +439,63 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         self.__have_tex |= other.__have_tex  # pylint: disable=protected-access
         self.__have_norm |= other.__have_norm  # pylint: disable=protected-access
 
+    def combine_v2(self, other: 'Obj') -> None:
+        """Combines another Obj into the calling Obj.
+
+        Args:
+            other (Obj): The Obj to combine
+
+        Raises:
+            RuntimeError: If ``other`` is not an Obj or if it has
+                a different coordinate reference system.
+        """
+        if not isinstance(other, Obj):
+            raise RuntimeError(f"Cannot combine {type(self)} with type {type(other)}")
+
+        if self._crs != other._crs:  # pylint: disable=protected-access
+            # TODO(rhite): convert other to self automatically?
+            raise RuntimeError(f"Cannot combine objs with differing coordinate systems")
+
+        if not self.__root:
+            # Started with an empty obj that didn't call read(...)
+            self.__root = other.__root  # pylint: disable=protected-access
+
+        o_v_count = np.uint32(len(self.vertices))
+        o_vt_count = np.uint32(len(self.texCoords))
+        o_vn_count = np.uint32(len(self.normals))
+        o_f_count = np.uint32(len(self.faces))
+
+        self.vertices = np.concatenate((self.vertices, other.vertices))
+        self.texCoords = np.concatenate((self.texCoords, other.texCoords))
+        self.normals = np.concatenate((self.normals, other.normals))
+
+        # self.faces = np.concatenate((self.faces, other.faces + [o_v_count, o_vt_count, o_vn_count]))
+        # self.materials = self.materials + [(m[0], m[1], m[2] + o_f_count) for m in other.materials]
+
+        self_mtl_names = [n for _, n, _ in self.materials]
+        for cur_i in range(len(other.materials)):
+            o_mtl_lib, o_mtl_name, o_mtl_face_i = other.materials[cur_i]
+            o_mtl_face_j = other.materials[cur_i + 1][2] if cur_i + 1 < len(other.materials) else len(other.faces)
+
+            if o_mtl_name in self_mtl_names:
+                mtl_index = self_mtl_names.index(o_mtl_name)
+                self_mtl_i = self.materials[mtl_index][2]
+
+                self.faces = np.concatenate((self.faces[:self_mtl_i],
+                                             other.faces[o_mtl_face_i:o_mtl_face_j] + [o_v_count, o_vt_count,
+                                                                                       o_vn_count],
+                                             self.faces[self_mtl_i:]))
+                for i in range(mtl_index + 1, len(self.materials)):
+                    self.materials[i][2] = self.materials[i][2] + (o_mtl_face_j - o_mtl_face_i)
+            else:
+                self.faces = np.concatenate(self.faces,
+                                            other.faces[o_mtl_face_i:o_mtl_face_j] + [o_v_count, o_vt_count,
+                                                                                      o_vn_count])
+                self.materials.append((o_mtl_lib, o_mtl_name, o_mtl_face_i + o_f_count))
+
+        self.__have_tex |= other.__have_tex  # pylint: disable=protected-access
+        self.__have_norm |= other.__have_norm  # pylint: disable=protected-access
+
     def getCrs(self) -> CoordinateReferenceSystem:
         """Gets the coordinate system of the Obj
 

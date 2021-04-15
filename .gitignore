@@ -7,3 +7,5 @@ venv
 *.swp
 *egg-info
 .idea
+out
+objs
