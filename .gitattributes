@@ -1,0 +1,15 @@
+# Make all recognized text files use unix-style line endings since everything is run in a container
+* text eol=lf
+
+# Definitely make absolutely sure these files have unix line endings
+*.sh text eol=lf
+
+# Special exceptions for windows files - not really necessary, but for legacy scripts
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+# Forced recognition of binary formats
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
