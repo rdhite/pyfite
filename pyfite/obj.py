@@ -249,45 +249,6 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
         self._copy_materials(dest_parent)
 
-    def write_v2(self, dest: Union[str, Path, TextIOWrapper],
-                 precision: Union[int, Tuple[int, int, int]] = None) -> None:
-        """Writes the Obj and copies textures with it. This will group faces with the same texture together.
-
-        Note:
-            Order of data may not be identical to any OBJs that were read.
-            All 'v', then 'vt', then 'vn', then 'f/mtllib/usemtl' are written.
-
-        Args:
-            dest (Union[str,Path,TextIOWrapper]): The destination to write to
-            precision (Union[int,Tuple[int,int,int]], optional): The number of decimal places to write for v, vt, and vn respectively
-        """
-        if not isinstance(precision, tuple):
-            precision = (precision, precision, precision)
-        if not all(map(lambda x: isinstance(x, (int, type(None))), precision)):
-            raise ValueError(f'Provided precision was not an int or None: {precision}')
-
-        self._determine_if_have_tex_norm()
-
-        if isinstance(dest, str):
-            dest = Path(dest)
-
-        if isinstance(dest, TextIOWrapper):
-            self._write_v(dest, precision[0])
-            self._write_vt(dest, precision[1])
-            self._write_vn(dest, precision[2])
-            self._writeF_v2(dest)
-            dest_parent = Path(dest.name).parent
-        else:
-            dest_parent = dest.parent
-            os.makedirs(dest.parent, exist_ok=True)
-            with open(dest, 'w+', 8192) as obj:
-                self._write_v(obj, precision[0])
-                self._write_vt(obj, precision[1])
-                self._write_vn(obj, precision[2])
-                self._writeF_v2(obj)
-
-        self._copy_materials(dest_parent)
-
     def _write_v(self, fout: TextIOWrapper, precision: int) -> None:
         """Writes vertices to ``fout``.
 
@@ -371,48 +332,6 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             # Then write the mtllib and usemtl lines for the next material in the list
             fout.write(''.join(matlines))
             i = stop
-
-    def _writeF_v2(self, fout: TextIOWrapper) -> None:
-        """
-        Writes faces and mtllib/usemtl to ``fout``.
-        Args:
-            fout: (TextIOWrapper): The file descriptor to write to
-        """
-        i = 0
-        mtllib, mtl = '', ''
-        mat_gen = (mat for mat in self.materials)
-
-        vert_pattern = '{}'
-        if self.__have_norm:
-            vert_pattern += '/{}/{}'
-        elif self.__have_tex:
-            vert_pattern += '/{}{}'  # Second brace will always be filled with ''
-        else:
-            vert_pattern += '{}{}'  # Second and third braces always filled with ''
-
-        # Write out all mtllibs
-        all_matlibs = list(set(f'mtllib {mat[0].relative}\n' for mat in self.materials))
-        fout.writelines(all_matlibs)
-
-        # Aggregate faces by material used
-        for uniq_mat in set(list(map(lambda mat: mat[1], self.materials))):
-            is_new_mtl = True
-            for mat_index, mat in enumerate(self.materials):
-                if uniq_mat == mat[1]:
-                    fout.write(f'#mtl for {mat[1]}\n')
-                    if is_new_mtl:
-                        fout.write(f'usemtl {uniq_mat}\n')
-                        is_new_mtl = False
-
-                    start_faces = mat[2]
-                    end_faces = len(self.faces)
-                    if mat_index + 1 < len(self.materials):
-                        end_faces = self.materials[mat_index + 1][2]
-
-                    for f in self.faces[start_faces:end_faces].reshape(-1, 9):
-                        face = [str(x) if x != Obj.INV_IDX else '' for x in f]
-                        # noinspection PyStringFormat
-                        fout.write(f'f {vert_pattern} {vert_pattern} {vert_pattern}\n'.format(*face))
 
     def _copy_materials(self, base: Path) -> None:
         """Copies materials referenced by Obj to the destination.
