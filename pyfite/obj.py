@@ -171,10 +171,44 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
         # Clear out an empty material if it happened to happen at the end
         if (len(self.materials) >= 2 and self.materials[-1][2] == self.materials[-2][2] or
-            len(self.materials) > 0 and self.materials[-1][2] == len(self.faces)):
+                len(self.materials) > 0 and self.materials[-1][2] == len(self.faces)):
             self.materials.pop()
 
+        self._remove_duplicate_materials()
+
         self._determine_if_have_tex_norm()
+
+    def _remove_duplicate_materials(self) -> None:
+        """Group faces by materials used and remove any duplicate materials
+        """
+        all_mtl_names = [n for _, n, _ in self.materials]
+        uniq = list(set(all_mtl_names))
+
+        if len(uniq) == len(all_mtl_names):
+            return
+
+        face_group = {}
+        for n in uniq:
+            face_group[n] = np.empty((0, 3, 3), dtype=np.uint32)
+
+        for mtl_i in range(len(all_mtl_names)):
+            mtl_face_i = self.materials[mtl_i][2]
+            mtl_face_j = self.materials[mtl_i + 1][2] if mtl_i + 1 < len(self.materials) else len(self.faces)
+            face_group[all_mtl_names[mtl_i]] = np.concatenate((face_group[all_mtl_names[mtl_i]], self.faces[mtl_face_i:mtl_face_j]))
+
+        new_materials = []
+        starting_i = 0
+        for mtl_name in uniq:
+            new_materials.append((self.materials[all_mtl_names.index(mtl_name)][0], mtl_name, starting_i))
+            starting_i = starting_i + len(face_group[mtl_name])
+
+        new_faces = np.empty((0, 3, 3), dtype=np.uint32)
+        for arr in face_group.values():
+            new_faces = np.concatenate((new_faces, arr))
+
+        self.faces = new_faces
+        self.materials = new_materials
+
 
     def write(self, dest: Union[str, Path, TextIOWrapper], precision: Union[int, Tuple[int, int, int]] = None) -> None:
         """Writes the Obj and copies textures with it.
@@ -238,18 +272,18 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             dest = Path(dest)
 
         if isinstance(dest, TextIOWrapper):
-            self._writeV(dest, precision[0])
-            self._writeVt(dest, precision[1])
-            self._writeVn(dest, precision[2])
+            self._write_v(dest, precision[0])
+            self._write_vt(dest, precision[1])
+            self._write_vn(dest, precision[2])
             self._writeF_v2(dest)
-            destParent = Path(dest.name).parent
+            dest_parent = Path(dest.name).parent
         else:
-            destParent = dest.parent
+            dest_parent = dest.parent
             os.makedirs(dest.parent, exist_ok=True)
             with open(dest, 'w+', 8192) as obj:
-                self._writeV(obj, precision[0])
-                self._writeVt(obj, precision[1])
-                self._writeVn(obj, precision[2])
+                self._write_v(obj, precision[0])
+                self._write_vt(obj, precision[1])
+                self._write_vn(obj, precision[2])
                 self._writeF_v2(obj)
 
         self._copy_materials(dest_parent)
@@ -337,6 +371,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             # Then write the mtllib and usemtl lines for the next material in the list
             fout.write(''.join(matlines))
             i = stop
+
     def _writeF_v2(self, fout: TextIOWrapper) -> None:
         """
         Writes faces and mtllib/usemtl to ``fout``.
@@ -404,42 +439,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
     def combine(self, other: 'Obj') -> None:
         """Combines another Obj into the calling Obj.
-
-        Args:
-            other (Obj): The Obj to combine
-
-        Raises:
-            RuntimeError: If ``other`` is not an Obj or if it has
-                a different coordinate reference system.
-        """
-        if not isinstance(other, Obj):
-            raise RuntimeError(f"Cannot combine {type(self)} with type {type(other)}")
-
-        if self._crs != other._crs:  # pylint: disable=protected-access
-            # TODO(rhite): convert other to self automatically?
-            raise RuntimeError("Cannot combine objs with differing coordinate systems")
-
-        if not self.__root:
-            # Started with an empty obj that didn't call read(...)
-            self.__root = other.__root  # pylint: disable=protected-access
-
-        o_v_count = np.uint32(len(self.vertices))
-        o_vt_count = np.uint32(len(self.tex_coords))
-        o_vn_count = np.uint32(len(self.normals))
-        o_f_count = np.uint32(len(self.faces))
-
-        self.vertices = np.concatenate((self.vertices, other.vertices))
-        self.tex_coords = np.concatenate((self.tex_coords, other.tex_coords))
-        self.normals = np.concatenate((self.normals, other.normals))
-
-        self.faces = np.concatenate((self.faces, other.faces + [o_v_count, o_vt_count, o_vn_count]))
-        self.materials = self.materials + [(m[0], m[1], m[2] + o_f_count) for m in other.materials]
-
-        self.__have_tex |= other.__have_tex  # pylint: disable=protected-access
-        self.__have_norm |= other.__have_norm  # pylint: disable=protected-access
-
-    def combine_v2(self, other: 'Obj') -> None:
-        """Combines another Obj into the calling Obj.
+        This version will also group faces that are using the same material.
 
         Args:
             other (Obj): The Obj to combine
@@ -460,12 +460,12 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             self.__root = other.__root  # pylint: disable=protected-access
 
         o_v_count = np.uint32(len(self.vertices))
-        o_vt_count = np.uint32(len(self.texCoords))
+        o_vt_count = np.uint32(len(self.tex_coords))
         o_vn_count = np.uint32(len(self.normals))
         o_f_count = np.uint32(len(self.faces))
 
         self.vertices = np.concatenate((self.vertices, other.vertices))
-        self.texCoords = np.concatenate((self.texCoords, other.texCoords))
+        self.tex_coords = np.concatenate((self.tex_coords, other.tex_coords))
         self.normals = np.concatenate((self.normals, other.normals))
 
         # self.faces = np.concatenate((self.faces, other.faces + [o_v_count, o_vt_count, o_vn_count]))
@@ -554,7 +554,6 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         #   2nd axis is the position, texture, and normal of each face point
         # You can reverse face winding by reversing the 1st axis
         self.faces = np.flip(self.faces, axis=1)
-
 
 
 class SelfGeoreferencingObj(Obj):
