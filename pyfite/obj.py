@@ -191,10 +191,10 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         for n in uniq:
             face_group[n] = np.empty((0, 3, 3), dtype=np.uint32)
 
-        for mtl_i in range(len(all_mtl_names)):
+        for mtl_i, mtl in enumerate(all_mtl_names):
             mtl_face_i = self.materials[mtl_i][2]
             mtl_face_j = self.materials[mtl_i + 1][2] if mtl_i + 1 < len(self.materials) else len(self.faces)
-            face_group[all_mtl_names[mtl_i]] = np.concatenate((face_group[all_mtl_names[mtl_i]], self.faces[mtl_face_i:mtl_face_j]))
+            face_group[mtl] = np.concatenate((face_group[mtl], self.faces[mtl_face_i:mtl_face_j]))
 
         new_materials = []
         starting_i = 0
@@ -208,7 +208,6 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
         self.faces = new_faces
         self.materials = new_materials
-
 
     def write(self, dest: Union[str, Path, TextIOWrapper], precision: Union[int, Tuple[int, int, int]] = None) -> None:
         """Writes the Obj and copies textures with it.
@@ -372,7 +371,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
         if self._crs != other._crs:  # pylint: disable=protected-access
             # TODO(rhite): convert other to self automatically?
-            raise RuntimeError(f"Cannot combine objs with differing coordinate systems")
+            raise RuntimeError("Cannot combine objs with differing coordinate systems")
 
         if not self.__root:
             # Started with an empty obj that didn't call read(...)
