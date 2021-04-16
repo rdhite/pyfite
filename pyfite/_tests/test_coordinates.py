@@ -422,7 +422,10 @@ def test_projcrs_from_epsg():
     epsg4978_crs = pfc.ProjCrs.from_epsg(4978, (34.09, -118.13, 0))
     epsg32618_crs = pfc.ProjCrs.from_epsg(32618, (28.54, -81.38, 0))
 
-    assert str(epsg4326_crs) == '+proj=longlat +datum=WGS84 +no_defs +type=crs 60.25 -80.12 0'
-    assert str(epsg4978_crs) == '+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs 34.09 -118.13 0'
-    assert str(epsg32618_crs) == '+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs +type=crs 28.54 -81.38 0'
+    assert_proj_str_equivalent(str(epsg4326_crs),
+        '+proj=longlat +datum=WGS84 +no_defs +type=crs 60.25 -80.12 0')
+    assert_proj_str_equivalent(str(epsg4978_crs),
+        '+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs 34.09 -118.13 0')
+    assert_proj_str_equivalent(str(epsg32618_crs),
+        '+proj=utm +zone=18 +datum=WGS84 +units=m +no_defs +type=crs 28.54 -81.38 0')
     

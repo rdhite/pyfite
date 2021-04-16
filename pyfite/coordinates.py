@@ -473,7 +473,7 @@ class ProjCrs(CoordinateReferenceSystem):
         return ProjCrs(srep)
 
     @staticmethod
-    def from_epsg(code: Union[str,int], offset: Tuple[float, float, float]) -> 'ProjCrs':
+    def from_epsg(code: Union[str,int], offset: Optional[Tuple[float, float, float]] = (0.0, 0.0, 0.0)) -> 'ProjCrs':
         """Creates ProjCrs from an EPSG code.
 
         Args:
