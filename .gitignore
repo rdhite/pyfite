@@ -6,3 +6,6 @@ venv
 .vscode
 *.swp
 *egg-info
+.idea
+out
+objs
