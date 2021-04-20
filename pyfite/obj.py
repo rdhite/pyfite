@@ -357,7 +357,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
     def combine(self, other: 'Obj') -> None:
         """Combines another Obj into the calling Obj.
-        This will also group faces that are using the same material.
+        This version will also group faces that are using the same material.
 
         Args:
             other (Obj): The Obj to combine
@@ -402,9 +402,9 @@ class Obj:  # pylint: disable=too-many-instance-attributes
                 for i in range(mtl_index + 1, len(self.materials)):
                     self.materials[i][2] = self.materials[i][2] + (o_mtl_face_j - o_mtl_face_i)
             else:
-                self.faces = np.concatenate(self.faces,
+                self.faces = np.concatenate((self.faces,
                                             other.faces[o_mtl_face_i:o_mtl_face_j] + [o_v_count, o_vt_count,
-                                                                                      o_vn_count])
+                                                                                      o_vn_count]))
                 self.materials.append((o_mtl_lib, o_mtl_name, o_mtl_face_i + o_f_count))
 
         self.__have_tex |= other.__have_tex  # pylint: disable=protected-access
