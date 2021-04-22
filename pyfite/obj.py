@@ -199,7 +199,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         new_materials = []
         starting_i = 0
         for mtl_name in uniq:
-            new_materials.append((self.materials[all_mtl_names.index(mtl_name)][0], mtl_name, starting_i))
+            new_materials.append([self.materials[all_mtl_names.index(mtl_name)][0], mtl_name, starting_i])
             starting_i = starting_i + len(face_group[mtl_name])
 
         new_faces = np.empty((0, 3, 3), dtype=np.uint32)
@@ -405,10 +405,10 @@ class Obj:  # pylint: disable=too-many-instance-attributes
                 for i in range(mtl_index + 1, len(self.materials)):
                     self.materials[i][2] = self.materials[i][2] + (o_mtl_face_j - o_mtl_face_i)
             else:
-                self.faces = np.concatenate(self.faces,
+                self.faces = np.concatenate((self.faces,
                                             other.faces[o_mtl_face_i:o_mtl_face_j] + [o_v_count, o_vt_count,
-                                                                                      o_vn_count])
-                self.materials.append((o_mtl_lib, o_mtl_name, o_mtl_face_i + o_f_count))
+                                                                                      o_vn_count]))
+                self.materials.append([o_mtl_lib, o_mtl_name, o_mtl_face_i + o_f_count])
 
         self.__have_tex |= other.__have_tex  # pylint: disable=protected-access
         self.__have_norm |= other.__have_norm  # pylint: disable=protected-access
