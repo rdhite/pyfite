@@ -447,6 +447,8 @@ class ProjCrs(CoordinateReferenceSystem):
         proj_str (str): A valid Proj string
         offset (Tuple[float, float, float], optional): The offset by which points are adjusted
     """
+    _srepRegex = re.compile(rf'(\+proj=[^\s]+\s)((?:\+[^\s]+\s)+)(\+[^\s]+){_OPTIONAL_OFFSET}', re.IGNORECASE)
+
     def __init__(self, proj_str: str, offset: Optional[Tuple[float, float, float]] = (0.0, 0.0, 0.0)):
         self._proj = proj_str
         self._offset = offset
@@ -470,7 +472,14 @@ class ProjCrs(CoordinateReferenceSystem):
     def from_str(srep: str) -> 'ProjCrs':
         """See ``CoordinateReferenceSystem.from_str``
         """
-        return ProjCrs(srep)
+        sm = ProjCrs._srepRegex.match(srep)
+        if not sm:
+            raise CrsDefError(f'Could not parse provided string representation for {ProjCrs}: {srep}')
+
+        offset = (0.0, 0.0, 0.0)
+        if sm[4]:
+            offset = (float(sm[4]), float(sm[5]), float(sm[6]))
+        return ProjCrs(proj_str=(sm[1] + sm[2] + sm[3]), offset=offset)
 
     @staticmethod
     def from_epsg(code: Union[str,int], offset: Optional[Tuple[float, float, float]] = (0.0, 0.0, 0.0)) -> 'ProjCrs':
@@ -478,7 +487,7 @@ class ProjCrs(CoordinateReferenceSystem):
 
         Args:
             code: The EPSG code to use
-        
+
         Returns:
             A ProjCrs object representing the `code`
         """

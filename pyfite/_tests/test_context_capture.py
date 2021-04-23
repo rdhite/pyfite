@@ -32,4 +32,4 @@ def test_context_capture_regex():
     assert_proj_str_equivalent(str(metadata_epsg4326.get_crs()),
         '+proj=longlat +datum=WGS84 +no_defs +type=crs')
     assert_proj_str_equivalent(str(metadata_epsg4326_offset.get_crs()),
-        '+proj=longlat +datum=WGS84 +no_defs +type=crs 1423.0 -1205.0 0.0')
+        '+proj=longlat +datum=WGS84 +no_defs +type=crs -91.0 53.0 0.0')
