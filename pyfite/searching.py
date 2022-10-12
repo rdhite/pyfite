@@ -16,6 +16,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from typing import Generator, Iterable, List, Pattern
 
+
 def _find_all_by_extensions(self, extensions: Iterable[str], case_sensitive=False) -> List[str]:
     """Finds all files with one of the given ``extensions``.
 
@@ -28,14 +29,15 @@ def _find_all_by_extensions(self, extensions: Iterable[str], case_sensitive=Fals
     Returns:
         List[str]: List of paths found with one of the given ``extensions``
     """
-    extensions = [ext[1:] if ext.startswith('.') else ext for ext in extensions if len(ext) > 0]
+    extensions = [ext[1:] if ext.startswith(".") else ext for ext in extensions if len(ext) > 0]
     pattern_str = f'.*\\.(?:{"|".join(extensions)})$'
     pattern = re.compile(pattern_str) if case_sensitive else re.compile(pattern_str, re.IGNORECASE)
     return self.find_all(pattern)
 
+
 class Searcher(ABC):
-    """Interface for Searchers
-    """
+    """Interface for Searchers"""
+
     @abstractmethod
     def _find_all(self, pattern: Pattern[str]) -> Generator[str, None, None]:
         """Finds all files in the archive that match ``pattern``.
@@ -101,10 +103,11 @@ class Searcher(ABC):
         Returns:
             List[str]: List of paths found with one of the given ``extensions``
         """
-        extensions = [ext[1:] if ext.startswith('.') else ext for ext in extensions if len(ext) > 0]
+        extensions = [ext[1:] if ext.startswith(".") else ext for ext in extensions if len(ext) > 0]
         pattern_str = f'.*\\.(?:{"|".join(extensions)})$'
         pattern = re.compile(pattern_str) if case_sensitive else re.compile(pattern_str, re.IGNORECASE)
         return self.find_all(pattern)
+
 
 class ArchiveSearcher(Searcher):
     """Searches through archive contents without extracting any data.
@@ -123,17 +126,20 @@ class ArchiveSearcher(Searcher):
     Raises:
         zipfile.BadZipFile: If ``path`` isn't a ZIP file (regardless of extension)
     """
+
     def __init__(self, path: str):
-        self._archive = zipfile.ZipFile(path, 'r')
+        self._archive = zipfile.ZipFile(path, "r")
 
     def __del__(self):
         self._archive.close()
 
     def _find_all(self, pattern: Pattern[str]) -> Generator[str, None, None]:
-        """See ``Searcher._find_all``
-        """
-        return (entry.filename for entry in self._archive.infolist()
-                if re.search(pattern, entry.filename) and entry.file_size > 0)
+        """See ``Searcher._find_all``"""
+        return (
+            entry.filename
+            for entry in self._archive.infolist()
+            if re.search(pattern, entry.filename) and entry.file_size > 0
+        )
 
     def extract_files(self, dest: str, files: List[str]) -> None:
         """Extracts the ``files`` in the archive to ``dest``
@@ -150,13 +156,14 @@ class ArchiveSearcher(Searcher):
             files (List[str]): The list of paths within the archive to extract
         """
         for path in files:
-            if path[0] in ['/', '\\']:
+            if path[0] in ["/", "\\"]:
                 path = path[1:]  # Safe to do even on empty strings
             with self._archive.open(path) as content:
                 target = os.path.join(dest, path)
                 os.makedirs(os.path.dirname(target), exist_ok=True)
-                with open(target, 'wb+') as file:
+                with open(target, "wb+") as file:
                     file.write(content.read())
+
 
 class DirectorySearcher(Searcher):
     """Searches recursively through directories for files matching a pattern.
@@ -170,20 +177,22 @@ class DirectorySearcher(Searcher):
     Raises:
         NotADirectoryError: If ``root`` is not an existing directory
     """
+
     def __init__(self, root: str):
         self._root = root
         if not os.path.isdir(self._root):
             raise NotADirectoryError()
 
     def _find_all(self, pattern: Pattern[str]) -> Generator[str, None, None]:
-        """See ``Searcher._find_all``
-        """
+        """See ``Searcher._find_all``"""
+
         def gen():
             for root, _, files in os.walk(self._root):
                 for file in files:
-                    path = os.path.join(root, file)[len(self._root):]
-                    if path[0] in ['/', '\\']:
+                    path = os.path.join(root, file)[len(self._root) :]
+                    if path[0] in ["/", "\\"]:
                         path = path[1:]  # Safe to do even on empty strings
                     if re.search(pattern, path):
                         yield os.path.join(self._root, path)
+
         return gen()
