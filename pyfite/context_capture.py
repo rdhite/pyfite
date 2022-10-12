@@ -29,7 +29,7 @@ class Metadata:
     def __init__(self, path: Union[str, Path]):
         self._crs = None
 
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             metadata = f.read()
 
             # Find the offset, which is present for all coordinate systems
@@ -94,4 +94,4 @@ class Metadata:
         Args:
             path (Union[str,Path]): The path to write to
         """
-        raise NotImplementedError() # pylint: disable=no-self-use
+        raise NotImplementedError()

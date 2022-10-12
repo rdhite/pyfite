@@ -435,7 +435,7 @@ def test_projcrs_to_string_from_string():
     proj_str1 = pfc.ProjCrs.from_str('+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs 54.21 -118.13 6.3')
     proj_str2 = pfc.ProjCrs.from_str('+proj=longlat +datum=WGS84 +no_defs +type=crs 60.25 -80.12 10.5')
 
-    assert_proj_str_equivalent(str(proj_str1), 
+    assert_proj_str_equivalent(str(proj_str1),
     '+proj=geocent +datum=WGS84 +units=m +no_defs +type=crs 54.21 -118.13 6.3')
-    assert_proj_str_equivalent(str(proj_str2), 
+    assert_proj_str_equivalent(str(proj_str2),
     '+proj=longlat +datum=WGS84 +no_defs +type=crs 60.25 -80.12 10.5')

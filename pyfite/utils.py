@@ -88,8 +88,8 @@ def static_vars(**kwargs):
         https://stackoverflow.com/questions/279561/what-is-the-python-equivalent-of-static-variables-inside-a-function
     """
     def decorate(func):
-        for k in kwargs:
-            setattr(func, k, kwargs[k])
+        for k, v in kwargs.items():
+            setattr(func, k, v)
         return func
     return decorate
 

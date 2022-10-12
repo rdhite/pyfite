@@ -203,7 +203,7 @@ class CoordinateReferenceSystem(ABC):
         """
         s = ''
         if self._has_offset():
-            s = ' {} {} {}'.format(*self.offset)
+            s = f' {" ".join(map(str, self.offset))}'
         return s
 
     def _get_offset_repr(self, include_comma: Optional[bool] = True):
@@ -385,7 +385,7 @@ class Utm(CoordinateReferenceSystem):
     def __str__(self):
         """See ``CoordinateReferenceSystem.__str__``.
         """
-        return 'UTM {}{}'.format(self.zone, 'S' if self.south else 'N') + self._get_offset_str()
+        return f'UTM {self.zone}{"S" if self.south else "N"}' + self._get_offset_str()
 
     def __repr__(self):
         """See ``CoordinateReferenceSystem.__repr__``.
@@ -549,7 +549,7 @@ class CoordinateConverter:
         Returns:
             A set of points converted to the target CRS with shape (N, 3)
         """
-        return self.__call__(points)
+        return self(points)
 
     @staticmethod
     def __get_converter(from_crs: CoordinateReferenceSystem,

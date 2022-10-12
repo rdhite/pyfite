@@ -152,9 +152,8 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         self.__root = path.parent
 
         # First get a count of everything we need to store
-        f = open(path, 'r')
-        content = f.readlines()
-        f.close()
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.readlines()
 
         counts = {'v': 0, 'vt': 0, 'vn': 0, 'f': 0, 'usemtl': 0, 'mtllib': 0}
         for line in content:
@@ -240,7 +239,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         else:
             dest_parent = dest.parent
             os.makedirs(dest.parent, exist_ok=True)
-            with open(dest, 'w+', 8192) as obj:
+            with open(dest, 'w+', buffering=8192, encoding='utf-8') as obj:
                 self._write_v(obj, precision[0])
                 self._write_vt(obj, precision[1])
                 self._write_vn(obj, precision[2])
@@ -340,7 +339,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         """
         mtllibs = {m[0] for m in self.materials}
         for mtllib in mtllibs:
-            with open(mtllib.base / mtllib.relative, 'r') as m:
+            with open(mtllib.base / mtllib.relative, 'r', encoding='utf-8') as m:
                 content = m.read()
                 materials = [line.rstrip()[len('map_Kd '):] for line in content.split('\n')
                              if line.startswith('map_Kd')]
@@ -352,7 +351,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
                 mtllib_dst = base / mtllib.relative
                 os.makedirs(mtllib_dst.parent, exist_ok=True)
-                with open(mtllib_dst, 'w+') as n:
+                with open(mtllib_dst, 'w+', encoding='utf-8') as n:
                     n.write(content)
 
     def combine(self, other: 'Obj') -> None:
@@ -390,8 +389,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         # self.materials = self.materials + [(m[0], m[1], m[2] + o_f_count) for m in other.materials]
 
         self_mtl_names = [n for _, n, _ in self.materials]
-        for cur_i in range(len(other.materials)):
-            o_mtl_lib, o_mtl_name, o_mtl_face_i = other.materials[cur_i]
+        for cur_i, (o_mtl_lib, o_mtl_name, o_mtl_face_i) in enumerate(other.materials):
             o_mtl_face_j = other.materials[cur_i + 1][2] if cur_i + 1 < len(other.materials) else len(other.faces)
 
             if o_mtl_name in self_mtl_names:
@@ -486,13 +484,12 @@ class SelfGeoreferencingObj(Obj):
 
         Refer to ``Obj`` for parameter descriptions.
         """
-        if isinstance(dest, (str, Path)):
-            dest = open(dest, 'w', 8192)
-            if self._crs is not None:
-                dest.write('# {}\n'.format(str(self._crs)))
-
-        super().write(dest, precision)
-        dest.close()
+        if isinstance(dest, TextIOWrapper):
+            super().write(dest, precision)
+        else:
+            with open(dest, 'w', buffering=8192, encoding='utf-8') as d:
+                d.write(f'# {str(self._crs)}\n')
+                super().write(d, precision)
 
     def _custom_line_processing(self, line: str) -> None:
         """Attempts to parse any comments as a ``CoordinateReferenceSystem`` string
