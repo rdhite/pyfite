@@ -56,11 +56,16 @@ class Obj:  # pylint: disable=too-many-instance-attributes
     Raises:
         FileNotFoundError: The ``path``, if specified, does not exist
     """
+
     INV_IDX = np.uint32(-1)
 
-    MtlLib = namedtuple('MtlLib', ['base', 'relative'])  # [Path, Union[str,Path]]
+    MtlLib = namedtuple("MtlLib", ["base", "relative"])  # [Path, Union[str,Path]]
 
-    def __init__(self, path: Optional[Union[str, Path]] = None, crs: CoordinateReferenceSystem = None):
+    def __init__(
+        self,
+        path: Optional[Union[str, Path]] = None,
+        crs: CoordinateReferenceSystem = None,
+    ):
         self._crs = crs
         self.vertices = np.empty((0, 3), dtype=np.float32)
         self.tex_coords = np.empty((0, 2), dtype=np.float32)
@@ -74,7 +79,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             if os.path.isfile(path):
                 self.read(path)
             else:
-                raise FileNotFoundError(f'{path} does not exist')
+                raise FileNotFoundError(f"{path} does not exist")
 
     def __process_lines(self, content: List[str]) -> None:
         """Processes each line from an obj.
@@ -82,44 +87,55 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         Args:
             content (List[str]): The lines of an obj
         """
-        attributes = {'v': 0, 'vt': 0, 'vn': 0, 'f': 0, 'mtl': '', 'mtllib': ''}
+        attributes = {"v": 0, "vt": 0, "vn": 0, "f": 0, "mtl": "", "mtllib": ""}
         for line in content:
             self._custom_line_processing(line)
             tokens = line.split()
 
-            if len(tokens) == 0 or tokens[0][0] == '#':
+            if len(tokens) == 0 or tokens[0][0] == "#":
                 continue
 
             attribute = tokens[0]
 
-            if attribute == 'v':
-                self.vertices[attributes['v']] = (np.float32(tokens[1]), np.float32(tokens[2]), np.float32(tokens[3]))
-                attributes['v'] += 1
+            if attribute == "v":
+                self.vertices[attributes["v"]] = (
+                    np.float32(tokens[1]),
+                    np.float32(tokens[2]),
+                    np.float32(tokens[3]),
+                )
+                attributes["v"] += 1
 
-            elif attribute == 'vt':
-                self.tex_coords[attributes['vt']] = (np.float32(tokens[1]), np.float32(tokens[2]))
-                attributes['vt'] += 1
+            elif attribute == "vt":
+                self.tex_coords[attributes["vt"]] = (
+                    np.float32(tokens[1]),
+                    np.float32(tokens[2]),
+                )
+                attributes["vt"] += 1
 
-            elif attribute == 'vn':
-                self.normals[attributes['vn']] = (np.float32(tokens[1]), np.float32(tokens[2]), np.float32(tokens[3]))
-                attributes['vn'] += 1
+            elif attribute == "vn":
+                self.normals[attributes["vn"]] = (
+                    np.float32(tokens[1]),
+                    np.float32(tokens[2]),
+                    np.float32(tokens[3]),
+                )
+                attributes["vn"] += 1
 
-            elif attribute == 'mtllib':
-                attributes['mtllib'] = tokens[1]
-                self.__record_mat_change(attributes['mtllib'], attributes['mtl'], attributes['f'])
+            elif attribute == "mtllib":
+                attributes["mtllib"] = tokens[1]
+                self.__record_mat_change(attributes["mtllib"], attributes["mtl"], attributes["f"])
 
-            elif attribute == 'usemtl':
-                attributes['mtl'] = tokens[1]
-                self.__record_mat_change(attributes['mtllib'], attributes['mtl'], attributes['f'])
+            elif attribute == "usemtl":
+                attributes["mtl"] = tokens[1]
+                self.__record_mat_change(attributes["mtllib"], attributes["mtl"], attributes["f"])
 
-            elif attribute == 'f':
+            elif attribute == "f":
                 for i, token in enumerate(tokens[1:]):
                     vf = [Obj.INV_IDX] * 3
-                    for j, val in enumerate(token.split('/')):
+                    for j, val in enumerate(token.split("/")):
                         if val:
                             vf[j] = int(val)
-                    self.faces[attributes['f']][i] = vf
-                attributes['f'] += 1
+                    self.faces[attributes["f"]][i] = vf
+                attributes["f"] += 1
 
     def _custom_line_processing(self, line: str) -> None:
         """Performs any custom logic for a line while reading.
@@ -130,10 +146,11 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         pass  # pylint: disable=unnecessary-pass
 
     def _determine_if_have_tex_norm(self) -> None:
-        """Updates ``__have_tex`` and ``__have_norm`` to their appropriate values.
-        """
-        [_, self.__have_tex, self.__have_norm] = np.any(np.apply_along_axis(
-            lambda x: any(y != Obj.INV_IDX for y in x), 0, self.faces), 0)
+        """Updates ``__have_tex`` and ``__have_norm`` to their appropriate values."""
+        [_, self.__have_tex, self.__have_norm] = np.any(
+            np.apply_along_axis(lambda x: any(y != Obj.INV_IDX for y in x), 0, self.faces),
+            0,
+        )
 
     def read(self, path: Union[str, Path]) -> None:
         """Reads an OBJ into memory.
@@ -152,26 +169,29 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         self.__root = path.parent
 
         # First get a count of everything we need to store
-        f = open(path, 'r')
-        content = f.readlines()
-        f.close()
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.readlines()
 
-        counts = {'v': 0, 'vt': 0, 'vn': 0, 'f': 0, 'usemtl': 0, 'mtllib': 0}
+        counts = {"v": 0, "vt": 0, "vn": 0, "f": 0, "usemtl": 0, "mtllib": 0}
         for line in content:
-            key = line[:line.find(' ')]
+            key = line[: line.find(" ")]
             if key in counts:
                 counts[key] += 1
 
-        self.vertices = np.empty((counts['v'], 3), dtype=np.float32)
-        self.tex_coords = np.empty((counts['vt'], 2), dtype=np.float32)
-        self.normals = np.empty((counts['vn'], 3), dtype=np.float32)
-        self.faces = np.empty((counts['f'], 3, 3), dtype=np.uint32)
+        self.vertices = np.empty((counts["v"], 3), dtype=np.float32)
+        self.tex_coords = np.empty((counts["vt"], 2), dtype=np.float32)
+        self.normals = np.empty((counts["vn"], 3), dtype=np.float32)
+        self.faces = np.empty((counts["f"], 3, 3), dtype=np.uint32)
 
         self.__process_lines(content)
 
         # Clear out an empty material if it happened to happen at the end
-        if (len(self.materials) >= 2 and self.materials[-1][2] == self.materials[-2][2] or
-                len(self.materials) > 0 and self.materials[-1][2] == len(self.faces)):
+        if (
+            len(self.materials) >= 2
+            and self.materials[-1][2] == self.materials[-2][2]
+            or len(self.materials) > 0
+            and self.materials[-1][2] == len(self.faces)
+        ):
             self.materials.pop()
 
         self._remove_duplicate_materials()
@@ -179,8 +199,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         self._determine_if_have_tex_norm()
 
     def _remove_duplicate_materials(self) -> None:
-        """Group faces by materials used and remove any duplicate materials
-        """
+        """Group faces by materials used and remove any duplicate materials"""
         all_mtl_names = [n for _, n, _ in self.materials]
         uniq = list(set(all_mtl_names))
 
@@ -209,7 +228,11 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         self.faces = new_faces
         self.materials = new_materials
 
-    def write(self, dest: Union[str, Path, TextIOWrapper], precision: Union[int, Tuple[int, int, int]] = None) -> None:
+    def write(
+        self,
+        dest: Union[str, Path, TextIOWrapper],
+        precision: Union[int, Tuple[int, int, int]] = None,
+    ) -> None:
         """Writes the Obj and copies textures with it.
 
         Note:
@@ -224,7 +247,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         if not isinstance(precision, tuple):
             precision = (precision, precision, precision)
         if not all(map(lambda x: isinstance(x, (int, type(None))), precision)):
-            raise ValueError(f'Provided precision was not an int or None: {precision}')
+            raise ValueError(f"Provided precision was not an int or None: {precision}")
 
         self._determine_if_have_tex_norm()
 
@@ -240,7 +263,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         else:
             dest_parent = dest.parent
             os.makedirs(dest.parent, exist_ok=True)
-            with open(dest, 'w+', 8192) as obj:
+            with open(dest, "w+", buffering=8192, encoding="utf-8") as obj:
                 self._write_v(obj, precision[0])
                 self._write_vt(obj, precision[1])
                 self._write_vn(obj, precision[2])
@@ -256,9 +279,9 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             precision (int): The number of decimal places to write (None implies write max precision)
         """
         if precision is not None:
-            format_str = f'v {{:.{precision}f}} {{:.{precision}f}} {{:.{precision}f}}\n'
+            format_str = f"v {{:.{precision}f}} {{:.{precision}f}} {{:.{precision}f}}\n"
         else:
-            format_str = 'v {} {} {}\n'
+            format_str = "v {} {} {}\n"
         for v in self.vertices:
             fout.write(format_str.format(*v))
 
@@ -270,9 +293,9 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             precision (int): The number of decimal places to write (None implies write max precision)
         """
         if precision is not None:
-            format_str = f'vt {{:.{precision}f}} {{:.{precision}f}}\n'
+            format_str = f"vt {{:.{precision}f}} {{:.{precision}f}}\n"
         else:
-            format_str = 'vt {} {}\n'
+            format_str = "vt {} {}\n"
         for vt in self.tex_coords:
             fout.write(format_str.format(*vt))
 
@@ -284,9 +307,9 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             precision (int): The number of decimal places to write (None implies write max precision)
         """
         if precision is not None:
-            format_str = f'vn {{:.{precision}f}} {{:.{precision}f}} {{:.{precision}f}}\n'
+            format_str = f"vn {{:.{precision}f}} {{:.{precision}f}} {{:.{precision}f}}\n"
         else:
-            format_str = 'vn {} {} {}\n'
+            format_str = "vn {} {} {}\n"
         for vn in self.normals:
             fout.write(format_str.format(*vn))
 
@@ -297,16 +320,16 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             fout (TextIOWrapper): The file descriptor to write to
         """
         i = 0
-        mtllib, mtl = '', ''
+        mtllib, mtl = "", ""
         mat_gen = (mat for mat in self.materials)
 
-        vert_pattern = '{}'
+        vert_pattern = "{}"
         if self.__have_norm:
-            vert_pattern += '/{}/{}'
+            vert_pattern += "/{}/{}"
         elif self.__have_tex:
-            vert_pattern += '/{}{}'  # Second brace will always be filled with ''
+            vert_pattern += "/{}{}"  # Second brace will always be filled with ''
         else:
-            vert_pattern += '{}{}'  # Second and third braces always filled with ''
+            vert_pattern += "{}{}"  # Second and third braces always filled with ''
 
         while i < len(self.faces):
             stop = len(self.faces)
@@ -315,21 +338,24 @@ class Obj:  # pylint: disable=too-many-instance-attributes
                 next_mat = next(mat_gen)
                 if next_mat[0] != mtllib:
                     mtllib = next_mat[0]
-                    matlines.append(f'mtllib {str(mtllib.relative)}\n')
+                    matlines.append(f"mtllib {str(mtllib.relative)}\n")
                 if next_mat[1] != mtl:
                     mtl = next_mat[1]
-                    matlines.append(f'usemtl {mtl}\n')
+                    matlines.append(f"usemtl {mtl}\n")
                 stop = next_mat[2]
             except StopIteration:
                 pass
 
             # First write out the faces of the lines for the current mat
             for j in range(i, stop):
-                face = map(lambda x: str(x) if x != Obj.INV_IDX else '', self.faces[j].reshape((9,)))
-                fout.write(f'f {vert_pattern} {vert_pattern} {vert_pattern}\n'.format(*face))
+                face = map(
+                    lambda x: str(x) if x != Obj.INV_IDX else "",
+                    self.faces[j].reshape((9,)),
+                )
+                fout.write(f"f {vert_pattern} {vert_pattern} {vert_pattern}\n".format(*face))
 
             # Then write the mtllib and usemtl lines for the next material in the list
-            fout.write(''.join(matlines))
+            fout.write("".join(matlines))
             i = stop
 
     def _copy_materials(self, base: Path) -> None:
@@ -340,10 +366,11 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         """
         mtllibs = {m[0] for m in self.materials}
         for mtllib in mtllibs:
-            with open(mtllib.base / mtllib.relative, 'r') as m:
+            with open(mtllib.base / mtllib.relative, "r", encoding="utf-8") as m:
                 content = m.read()
-                materials = [line.rstrip()[len('map_Kd '):] for line in content.split('\n')
-                             if line.startswith('map_Kd')]
+                materials = [
+                    line.rstrip()[len("map_Kd ") :] for line in content.split("\n") if line.startswith("map_Kd")
+                ]
                 for material in materials:
                     mat_src = (mtllib.base / mtllib.relative).parent / material
                     mat_dst = (base / mtllib.relative).parent / material
@@ -352,10 +379,10 @@ class Obj:  # pylint: disable=too-many-instance-attributes
 
                 mtllib_dst = base / mtllib.relative
                 os.makedirs(mtllib_dst.parent, exist_ok=True)
-                with open(mtllib_dst, 'w+') as n:
+                with open(mtllib_dst, "w+", encoding="utf-8") as n:
                     n.write(content)
 
-    def combine(self, other: 'Obj') -> None:
+    def combine(self, other: "Obj") -> None:
         """Combines another Obj into the calling Obj.
         This version will also group faces that are using the same material.
 
@@ -390,24 +417,29 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         # self.materials = self.materials + [(m[0], m[1], m[2] + o_f_count) for m in other.materials]
 
         self_mtl_names = [n for _, n, _ in self.materials]
-        for cur_i in range(len(other.materials)):
-            o_mtl_lib, o_mtl_name, o_mtl_face_i = other.materials[cur_i]
+        for cur_i, (o_mtl_lib, o_mtl_name, o_mtl_face_i) in enumerate(other.materials):
             o_mtl_face_j = other.materials[cur_i + 1][2] if cur_i + 1 < len(other.materials) else len(other.faces)
 
             if o_mtl_name in self_mtl_names:
                 mtl_index = self_mtl_names.index(o_mtl_name)
                 self_mtl_i = self.materials[mtl_index][2]
 
-                self.faces = np.concatenate((self.faces[:self_mtl_i],
-                                             other.faces[o_mtl_face_i:o_mtl_face_j] + [o_v_count, o_vt_count,
-                                                                                       o_vn_count],
-                                             self.faces[self_mtl_i:]))
+                self.faces = np.concatenate(
+                    (
+                        self.faces[:self_mtl_i],
+                        other.faces[o_mtl_face_i:o_mtl_face_j] + [o_v_count, o_vt_count, o_vn_count],
+                        self.faces[self_mtl_i:],
+                    )
+                )
                 for i in range(mtl_index + 1, len(self.materials)):
                     self.materials[i][2] = self.materials[i][2] + (o_mtl_face_j - o_mtl_face_i)
             else:
-                self.faces = np.concatenate((self.faces,
-                                            other.faces[o_mtl_face_i:o_mtl_face_j] + [o_v_count, o_vt_count,
-                                                                                      o_vn_count]))
+                self.faces = np.concatenate(
+                    (
+                        self.faces,
+                        other.faces[o_mtl_face_i:o_mtl_face_j] + [o_v_count, o_vt_count, o_vn_count],
+                    )
+                )
                 self.materials.append([o_mtl_lib, o_mtl_name, o_mtl_face_i + o_f_count])
 
         self.__have_tex |= other.__have_tex  # pylint: disable=protected-access
@@ -445,8 +477,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
             # TODO(rhite): Handle normals
 
     def __record_mat_change(self, mtllib, mtl, f):
-        """Tracks indices at which materials change
-        """
+        """Tracks indices at which materials change"""
         if mtllib and mtl:
             mtllib = Obj.MtlLib(self.__root, mtllib)
             if len(self.materials) > 0 and self.materials[-1][2] == f:
@@ -465,8 +496,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         return Extents(*x, *y, *z)
 
     def reverse_faces(self) -> None:
-        """Reverses the winding of faces by revercing "f" lines.
-        """
+        """Reverses the winding of faces by revercing "f" lines."""
         # Faces are stored as arrays of arrays of coordinate types
         # i.e. the 0th axis is faces, 1st axis is face points,
         #   2nd axis is the position, texture, and normal of each face point
@@ -481,25 +511,28 @@ class SelfGeoreferencingObj(Obj):
     On write, it will first write a comment of the pyfite compatible CRS string of the Obj.
     """
 
-    def write(self, dest: Union[str, Path, TextIOWrapper], precision: Union[int, Tuple[int, int, int]] = None) -> None:
+    def write(
+        self,
+        dest: Union[str, Path, TextIOWrapper],
+        precision: Union[int, Tuple[int, int, int]] = None,
+    ) -> None:
         """Write the obj with a pyfite compatible CRS string as a comment.
 
         Refer to ``Obj`` for parameter descriptions.
         """
-        if isinstance(dest, (str, Path)):
-            dest = open(dest, 'w', 8192)
-            if self._crs is not None:
-                dest.write('# {}\n'.format(str(self._crs)))
-
-        super().write(dest, precision)
-        dest.close()
+        if isinstance(dest, TextIOWrapper):
+            super().write(dest, precision)
+        else:
+            with open(dest, "w", buffering=8192, encoding="utf-8") as d:
+                d.write(f"# {str(self._crs)}\n")
+                super().write(d, precision)
 
     def _custom_line_processing(self, line: str) -> None:
         """Attempts to parse any comments as a ``CoordinateReferenceSystem`` string
 
         Refer to ``Obj._custom_line_processing`` for parameter descriptions.
         """
-        if not self._crs and line.startswith('#'):
+        if not self._crs and line.startswith("#"):
             crs_str = CoordinateReferenceSystem.find_str(line)
             if crs_str:
                 self._crs = CoordinateReferenceSystem.from_str(crs_str)
