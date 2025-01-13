@@ -57,7 +57,7 @@ class Obj:  # pylint: disable=too-many-instance-attributes
         FileNotFoundError: The ``path``, if specified, does not exist
     """
 
-    INV_IDX = np.uint32(-1)
+    INV_IDX = np.iinfo(np.uint32).max
 
     MtlLib = namedtuple("MtlLib", ["base", "relative"])  # [Path, Union[str,Path]]
 
